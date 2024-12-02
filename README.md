@@ -19,10 +19,30 @@ Solutions for Advent of Code 2024 challenges.
 │   ├── utils/     # Utility functions
 │   │   ├── __init__.py
 │   │   └── input_reader.py
-│   └── __init__.py
-├── main.py        # Main runner script
-├── setup.py       # Package setup file
+│   └── main.py    # Main runner script
+├── requirements.txt # Project dependencies
 └── README.md
+```
+
+## Setup
+
+1. Create a virtual environment:
+```bash
+python -m venv venv
+```
+
+2. Activate the virtual environment:
+```bash
+# On Windows:
+venv\Scripts\activate
+
+# On Unix or MacOS:
+source venv/bin/activate
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
 ```
 
 ## Usage
@@ -30,13 +50,13 @@ Solutions for Advent of Code 2024 challenges.
 To run a solution for a specific day:
 
 ```bash
-PYTHONPATH=. python main.py <day_number>
+python src/main.py <day_number>
 ```
 
 For example, to run day 1's solution:
 
 ```bash
-PYTHONPATH=. python main.py 1
+python src/main.py 1
 ```
 
 ## Solution Structure
@@ -58,7 +78,7 @@ Each day's solution follows the same pattern:
    - `solve_part1()`
    - `solve_part2()`
    - `main()`
-4. Run your solution using the command above
+4. Run your solution using `python src/main.py X` where X is the day number
 
 ## Utilities
 
