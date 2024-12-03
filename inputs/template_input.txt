@@ -1,0 +1,33 @@
+# This is a template input file showing common Advent of Code input patterns
+
+# Pattern 1: Numbers separated by spaces
+1 2 3 4 5
+
+# Pattern 2: Grid of single digits
+123
+456
+789
+
+# Pattern 3: Instructions
+forward 5
+down 3
+up 2
+
+# Pattern 4: Mixed data with numbers and text
+Game 1: 3 blue, 4 red
+Game 2: 1 red, 2 green
+Game 3: 5 blue, 4 green
+
+# Pattern 5: Coordinates or pairs
+2,4
+1,3
+5,7
+
+# Pattern 6: Binary or hex data
+1001101
+0110111
+
+# Remember to:
+# 1. Remove these comments
+# 2. Choose appropriate pattern
+# 3. Add actual puzzle input

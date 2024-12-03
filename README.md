@@ -6,21 +6,22 @@ Solutions for Advent of Code 2024 challenges.
 
 ```
 .
-├── inputs/          # Input files for each day
+├── inputs/                # Input files for each day
+│   ├── template_input.txt # Template with common input patterns
 │   ├── 1.txt
 │   ├── 2.txt
 │   └── ...
-├── src/            # Source code
-│   ├── solutions/  # Daily solutions
-│   │   ├── __init__.py
+├── src/                  # Source code
+│   ├── solutions/        # Daily solutions
+│   │   ├── template_solution.py  # Template for new solutions
 │   │   ├── day01.py
 │   │   ├── day02.py
 │   │   └── ...
-│   ├── utils/     # Utility functions
+│   ├── utils/           # Utility functions
 │   │   ├── __init__.py
 │   │   └── input_reader.py
-│   └── main.py    # Main runner script
-├── requirements.txt # Project dependencies
+│   └── main.py          # Main runner script
+├── requirements.txt      # Project dependencies
 └── README.md
 ```
 
@@ -59,26 +60,39 @@ For example, to run day 1's solution:
 python src/main.py 1
 ```
 
-## Solution Structure
-
-Each day's solution follows the same pattern:
-
-1. Solutions are placed in `src/solutions/dayXX.py`
-2. Input files are placed in `inputs/X.txt`
-3. Each solution file contains:
-   - `solve_part1()` function for part 1
-   - `solve_part2()` function for part 2
-   - `main()` function to run both parts
-
 ## Adding New Solutions
 
-1. Create a new solution file in `src/solutions/` following the naming pattern `dayXX.py`
-2. Place your input file in `inputs/` as `X.txt`
-3. Implement the required functions:
-   - `solve_part1()`
-   - `solve_part2()`
-   - `main()`
-4. Run your solution using `python src/main.py X` where X is the day number
+1. Copy the template files:
+   - Copy `src/solutions/template_solution.py` to `src/solutions/dayXX.py`
+   - Reference `inputs/template_input.txt` for common input patterns
+   - Create `inputs/X.txt` for your puzzle input
+
+2. Update the solution file:
+   - Change the day number in `read_lines(0)` to your day number
+   - Choose appropriate input reader (`read_lines()` or `read_numbers()`)
+   - Implement `solve_part1()` and `solve_part2()`
+
+3. Run your solution:
+   ```bash
+   python src/main.py X  # where X is the day number
+   ```
+
+## Templates
+
+### Solution Template (`template_solution.py`)
+- Basic structure for daily solutions
+- Includes both part 1 and part 2 functions
+- Configurable input reading
+- Ready-to-use main function
+
+### Input Template (`template_input.txt`)
+Common input patterns found in Advent of Code:
+1. Space-separated numbers
+2. Character grids
+3. Text instructions
+4. Mixed data (numbers and text)
+5. Coordinate pairs
+6. Binary/hex data
 
 ## Utilities
 
