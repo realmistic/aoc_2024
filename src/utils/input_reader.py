@@ -12,3 +12,8 @@ def read_chars(day: int) -> list[str]:
     """Read input file for the given day and return characters as a list."""
     with open(f'inputs/{day}.txt', 'r') as file:
         return list(file.read().strip())
+
+def read_char_matrix(day: int) -> list[list[str]]:
+    """Read input file for given day and return matrix of chars."""
+    with open(f'inputs/{day}.txt', 'r') as file:
+        return [list(line.strip()) for line in file]
