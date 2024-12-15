@@ -1,6 +1,8 @@
 from re import L
 from src.utils.input_reader import read_lines, read_numbers
 import numpy as np
+from collections import defaultdict, deque
+from tqdm import tqdm
 
 def parse_input(data):
     """Parse input into grid and commands."""
@@ -53,100 +55,161 @@ def is_valid_position(grid, pos):
     rows, cols = grid.shape
     return 0 <= pos[0] < rows and 0 <= pos[1] < cols
 
-def can_move_to(grid, pos, next_pos):
-    """Check if a position is empty"""
-    if not is_valid_position(grid, next_pos):
-        return False
-    return grid[next_pos] == '.'
-
-def find_connected_piece(grid, pos):
-    """Find the other part of a connected piece"""
-    rows, cols = grid.shape
+def get_connected_piece(grid, pos):
+    """Get the connected piece position"""
     x, y = pos
-    
-    if grid[x,y] == '[' and y + 1 < cols and grid[x,y+1] == ']':
+    if grid[x,y] == '[' and y + 1 < grid.shape[1] and grid[x,y+1] == ']':
         return (x, y+1)
     elif grid[x,y] == ']' and y - 1 >= 0 and grid[x,y-1] == '[':
         return (x, y-1)
     return None
 
-def attempt_move_part2(grid, command):
-    """Non-recursive version that moves all eligible pieces at once"""
+def get_boxes_in_direction(grid, start_pos, command):
+    """Get boxes in the direction of movement"""
+    move = {
+        '>':(0, 1),
+        'v':(1, 0),
+        '<':(0, -1),
+        '^':(-1, 0)
+    }
+    dx, dy = move[command]
+    x, y = start_pos
+    boxes = []
+    
+    while True:
+        x += dx
+        y += dy
+        if not is_valid_position(grid, (x, y)):
+            break
+        if grid[x, y] in ['[', ']']:
+            boxes.append((x, y))
+    return boxes
+
+def find_boxes_to_move(grid, command):
+    """Find all boxes that need to be moved in this push, in order from first to last"""
     rows, cols = grid.shape
-    moves = []  # Store all possible moves
+    boxes_to_move = []  # Will store (left_pos, right_pos) tuples
+    processed = set()
     
-    # First pass: find all movable pieces
-    for i in range(rows):
-        for j in range(cols):
-            if grid[i,j] == '[':
-                connected = find_connected_piece(grid, (i,j))
-                if connected is None:
-                    continue
-                
-                next_pos_left = get_next_position((i,j), command)
-                next_pos_right = get_next_position(connected, command)
-                
-                # Check if both parts can move and won't collide with other pieces
-                if (is_valid_position(grid, next_pos_left) and 
-                    is_valid_position(grid, next_pos_right) and
-                    can_move_to(grid, (i,j), next_pos_left) and 
-                    can_move_to(grid, connected, next_pos_right)):
-                    
-                    # Check if the move would break any other connected pieces
-                    valid_move = True
-                    for x in range(rows):
-                        for y in range(cols):
-                            if grid[x,y] in ['[', ']']:
-                                other_connected = find_connected_piece(grid, (x,y))
-                                if other_connected:
-                                    if ((x,y) == next_pos_left or (x,y) == next_pos_right or
-                                        other_connected == next_pos_left or other_connected == next_pos_right):
-                                        valid_move = False
-                                        break
-                        if not valid_move:
-                            break
-                    
-                    if valid_move:
-                        moves.append(((i,j), connected))
+    # Determine scan direction based on command
+    if command == '^':
+        scan_rows = range(rows)
+    elif command == 'v':
+        scan_rows = range(rows-1, -1, -1)
+    elif command == '<':
+        scan_cols = range(cols)
+    else:  # command == '>'
+        scan_cols = range(cols-1, -1, -1)
     
-    # Second pass: apply all valid moves
+    # Scan grid in appropriate direction
+    if command in ['^', 'v']:
+        for i in scan_rows:
+            for j in range(cols):
+                if grid[i,j] == '[' and (i,j) not in processed:
+                    # Only check boxes in movement direction
+                    boxes = get_boxes_in_direction(grid, (i,j), command)
+                    for box_pos in boxes:
+                        if box_pos in processed:
+                            continue
+                        
+                        other = get_connected_piece(grid, box_pos)
+                        if other is None or other in processed:
+                            continue
+                            
+                        next_pos = get_next_position(box_pos, command)
+                        next_other = get_next_position(other, command)
+                        
+                        if not (is_valid_position(grid, next_pos) and is_valid_position(grid, next_other)):
+                            continue
+                            
+                        if grid[next_pos] == '.' and grid[next_other] == '.':
+                            left = box_pos if grid[box_pos] == '[' else other
+                            right = other if grid[box_pos] == '[' else box_pos
+                            boxes_to_move.append((left, right))
+                            processed.add(box_pos)
+                            processed.add(other)
+    else:
+        for j in scan_cols:
+            for i in range(rows):
+                if grid[i,j] == '[' and (i,j) not in processed:
+                    # Only check boxes in movement direction
+                    boxes = get_boxes_in_direction(grid, (i,j), command)
+                    for box_pos in boxes:
+                        if box_pos in processed:
+                            continue
+                        
+                        other = get_connected_piece(grid, box_pos)
+                        if other is None or other in processed:
+                            continue
+                            
+                        next_pos = get_next_position(box_pos, command)
+                        next_other = get_next_position(other, command)
+                        
+                        if not (is_valid_position(grid, next_pos) and is_valid_position(grid, next_other)):
+                            continue
+                            
+                        if grid[next_pos] == '.' and grid[next_other] == '.':
+                            left = box_pos if grid[box_pos] == '[' else other
+                            right = other if grid[box_pos] == '[' else box_pos
+                            boxes_to_move.append((left, right))
+                            processed.add(box_pos)
+                            processed.add(other)
+    
+    return boxes_to_move
+
+def attempt_move_part2(grid, command):
+    """Move all boxes in the correct order"""
     moved = False
-    for left_pos, right_pos in moves:
-        next_left = get_next_position(left_pos, command)
-        next_right = get_next_position(right_pos, command)
+    
+    while True:
+        any_moved = False
         
-        # Double check the positions are still empty
-        if (can_move_to(grid, left_pos, next_left) and 
-            can_move_to(grid, right_pos, next_right)):
-            # Move both parts
+        # Find all boxes that need to be moved
+        boxes_to_move = find_boxes_to_move(grid, command)
+        if not boxes_to_move:
+            break
+            
+        # Move boxes in reverse order (last to first)
+        for left, right in reversed(boxes_to_move):
+            next_left = get_next_position(left, command)
+            next_right = get_next_position(right, command)
+            
+            # Move the box
             grid[next_left] = '['
             grid[next_right] = ']'
-            grid[left_pos] = '.'
-            grid[right_pos] = '.'
+            grid[left] = '.'
+            grid[right] = '.'
+            any_moved = True
             moved = True
-    
-    # Move the robot
-    robot_pos = np.where(grid == '@')
-    if len(robot_pos[0]) > 0:
-        x, y = robot_pos[0][0], robot_pos[1][0]
-        next_pos = get_next_position((x,y), command)
-        if (is_valid_position(grid, next_pos) and 
-            can_move_to(grid, (x,y), next_pos)):
-            grid[next_pos] = '@'
-            grid[x,y] = '.'
-            moved = True
+        
+        # Move robot after boxes have moved
+        robot_pos = np.where(grid == '@')
+        if len(robot_pos[0]) > 0:
+            x, y = robot_pos[0][0], robot_pos[1][0]
+            next_pos = get_next_position((x,y), command)
+            if (is_valid_position(grid, next_pos) and grid[next_pos] == '.'):
+                grid[next_pos] = '@'
+                grid[x,y] = '.'
+                any_moved = True
+                moved = True
+        
+        if not any_moved:
+            break
     
     return 1 if moved else -1
 
 def calc_grid_value(grid)->int:
+    """Calculate grid value based on the actual positions in the grid"""
     sum = 0
-    for i in range(len(grid)):
-        for j in range(len(grid[0])):
-            if grid[i,j] in ['O','[']:
-                sum+=100*i+j
+    rows, cols = grid.shape
+    for i in range(rows):
+        for j in range(cols):
+            if grid[i,j] == 'O' or grid[i,j] == '[':
+                sum += 100*i + j
     return sum
 
 def transform_grid_part2(grid)->np.ndarray:
+    """Transform grid for part 2, doubling the width"""
     rows = len(grid)
     cols = len(grid[0])
     grid_transformed = np.full((rows, 2*cols),'.', dtype='<U1')
@@ -182,7 +245,8 @@ def solve_part2(grid, commands) -> int:
     """Solve part 2 of the puzzle."""
     grid2 = transform_grid_part2(grid)
 
-    for command in commands:
+    print(f"Processing {len(commands)} commands...")
+    for command in tqdm(commands, desc="Processing commands"):
         attempt_move_part2(grid2, command)
 
     return calc_grid_value(grid2)
